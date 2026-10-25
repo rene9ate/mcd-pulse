@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="麦脉 Pulse：把麦当劳的一餐，变成一场会照顾人的选择。" />
+  <title>麦脉 Pulse · 一餐的情绪处方</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root { --red:#da291c; --yellow:#ffc72c; --ink:#171717; --muted:#6f6f6f; --line:#e9e6e0; --paper:#fbfaf7; --green:#177245; }
+    * { box-sizing:border-box; }
+    body { margin:0; color:var(--ink); background:var(--paper); font-family:Manrope,system-ui,sans-serif; }
+    button, select { font:inherit; }
+    .shell { max-width:1180px; margin:0 auto; padding:28px 24px 56px; }
+    nav { display:flex; justify-content:space-between; align-items:center; margin-bottom:72px; }
+    .brand { display:flex; align-items:center; gap:11px; font-weight:800; letter-spacing:-.04em; }
+    .brand-mark { width:30px; height:30px; border-radius:50%; background:var(--yellow); display:grid; place-items:center; color:var(--red); font-size:18px; font-weight:900; }
+    .nav-note { color:var(--muted); font-size:12px; font-family:'DM Mono',monospace; }
+    .hero { display:grid; grid-template-columns:1.1fr .9fr; gap:64px; align-items:end; margin-bottom:42px; }
+    .eyebrow { color:var(--red); text-transform:uppercase; letter-spacing:.18em; font-size:11px; font-weight:800; margin-bottom:18px; }
+    h1 { font-size:clamp(46px,7vw,88px); letter-spacing:-.08em; line-height:.91; margin:0; max-width:720px; }
+    .hero p { max-width:390px; color:var(--muted); line-height:1.7; margin:0 0 5px; font-size:15px; }
+    .hero strong { color:var(--ink); }
+    .panel { border:1px solid var(--line); background:#fff; border-radius:24px; padding:26px; }
+    .prompt { margin-bottom:16px; color:var(--muted); font-size:12px; font-family:'DM Mono',monospace; }
+    .moods { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:20px; }
+    .mood { border:1px solid var(--line); background:#fff; border-radius:999px; padding:11px 15px; cursor:pointer; color:#454545; transition:.2s; }
+    .mood:hover, .mood.active { background:var(--ink); color:#fff; border-color:var(--ink); }
+    .filters { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    label { font-size:11px; color:var(--muted); display:block; margin-bottom:7px; }
+    select { width:100%; border:1px solid var(--line); border-radius:12px; padding:12px; background:#fff; color:var(--ink); }
+    .cta { width:100%; margin-top:18px; border:0; border-radius:13px; padding:15px; background:var(--red); color:#fff; font-weight:800; cursor:pointer; }
+    .cta:hover { background:#b92016; }
+    .status { display:flex; justify-content:space-between; align-items:center; font-size:12px; color:var(--muted); padding:18px 0 10px; }
+    .status-dot { width:7px; height:7px; background:var(--green); border-radius:50%; display:inline-block; margin-right:6px; }
+    .result { display:grid; grid-template-columns:1.15fr .85fr; gap:18px; margin-top:18px; }
+    .meal-card { border-radius:24px; padding:28px; background:var(--ink); color:#fff; min-height:330px; position:relative; overflow:hidden; }
+    .meal-card:after { content:'M'; position:absolute; right:-18px; bottom:-56px; font-size:260px; font-weight:800; color:rgba(255,199,44,.15); line-height:1; }
+    .tag { display:inline-block; background:var(--yellow); color:var(--ink); border-radius:999px; padding:6px 10px; font-size:11px; font-weight:800; }
+    .meal-card h2 { font-size:36px; letter-spacing:-.06em; line-height:1; margin:68px 0 12px; position:relative; z-index:1; }
+    .meal-card p { color:#c8c8c8; max-width:300px; line-height:1.6; font-size:13px; position:relative; z-index:1; }
+    .stats { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:22px; position:relative; z-index:1; }
+    .stat { border-top:1px solid #444; padding-top:10px; font-family:'DM Mono',monospace; font-size:12px; color:#c8c8c8; }
+    .stat b { display:block; color:#fff; font-family:Manrope,sans-serif; font-size:18px; margin-bottom:3px; }
+    .breakdown { border:1px solid var(--line); background:#fff; border-radius:24px; padding:25px; }
+    .breakdown h3 { margin:0 0 20px; font-size:16px; letter-spacing:-.03em; }
+    .item { display:flex; justify-content:space-between; padding:14px 0; border-bottom:1px solid var(--line); font-size:13px; }
+    .item span:last-child { font-family:'DM Mono',monospace; color:var(--muted); }
+    .total { display:flex; justify-content:space-between; margin-top:22px; font-weight:800; font-size:18px; }
+    .total span:last-child { color:var(--red); }
+    .action-row { display:flex; gap:10px; margin-top:22px; }
+    .ghost { flex:1; border:1px solid var(--line); background:#fff; border-radius:12px; padding:12px; cursor:pointer; font-size:12px; }
+    .ghost:hover { border-color:var(--ink); }
+    .section-head { display:flex; justify-content:space-between; align-items:end; margin:62px 0 18px; }
+    .section-head h2 { margin:0; font-size:23px; letter-spacing:-.05em; }
+    .section-head p { margin:0; color:var(--muted); font-size:12px; }
+    .principles { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+    .principle { padding:20px; border:1px solid var(--line); border-radius:18px; background:#fff; }
+    .principle .num { color:var(--red); font-family:'DM Mono',monospace; font-size:11px; }
+    .principle h3 { font-size:16px; margin:34px 0 8px; }
+    .principle p { color:var(--muted); font-size:12px; line-height:1.6; margin:0; }
+    footer { margin-top:66px; padding-top:18px; border-top:1px solid var(--line); display:flex; justify-content:space-between; color:var(--muted); font-size:11px; font-family:'DM Mono',monospace; }
+    .toast { position:fixed; left:50%; bottom:24px; transform:translate(-50%,20px); opacity:0; background:var(--ink); color:#fff; padding:13px 17px; border-radius:12px; font-size:13px; transition:.25s; pointer-events:none; }
+    .toast.show { opacity:1; transform:translate(-50%,0); }
+    @media(max-width:760px){ .shell{padding:22px 16px 40px} nav{margin-bottom:48px}.hero,.result{grid-template-columns:1fr;gap:28px}.hero p{max-width:none}.principles{grid-template-columns:1fr}.section-head{display:block}.section-head p{margin-top:8px} footer{display:block;line-height:1.8} }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <nav><div class="brand"><div class="brand-mark">M</div><span>麦脉 / PULSE</span></div><div class="nav-note">A SMALL DECISION, A BETTER DAY</div></nav>
+    <section class="hero">
+      <div><div class="eyebrow">McDonald's MCP × AI companion</div><h1>把一餐，<br><em>配成今天的样子。</em></h1></div>
+      <p>麦脉不是“猜你喜欢”，而是一份 <strong>情绪处方</strong>：告诉我你今天的状态，我帮你把口味、热量、预算和优惠，拼成刚刚好的一单。下面展示的是我刚刚用麦当劳 MCP 拉取的实时快照。</p>
+    </section>
+    <section class="panel">
+      <div class="prompt">01 / 今天的你，更接近哪一种？</div>
+      <div class="moods" id="moods"><button class="mood active" data-mood="续命">需要续命</button><button class="mood" data-mood="放松">想放松一下</button><button class="mood" data-mood="庆祝">值得庆祝</button><button class="mood" data-mood="轻盈">想吃得轻盈</button><button class="mood" data-mood="社交">和朋友分享</button><button class="mood" data-mood="社恐专属">社恐专属</button><button class="mood" data-mood="深夜emo">深夜 emo</button><button class="mood" data-mood="减肥第一天">减肥第一天</button><button class="mood" data-mood="钱包在减肥">钱包在减肥</button><button class="mood" data-mood="暴风吸入">暴风吸入</button><button class="mood" data-mood="假装很健康">假装很健康</button><button class="mood" data-mood="周一崩溃">周一崩溃</button></div>
+      <div class="filters"><div><label for="budget">预算上限</label><select id="budget"><option value="35">¥35 以内</option><option value="50">¥50 以内</option><option value="80">¥80 以内</option></select></div><div><label for="calorie">热量偏好</label><select id="calorie"><option value="650">650 kcal 左右</option><option value="500">500 kcal 以内</option><option value="900">不设上限，吃开心</option></select></div></div>
+      <button class="cta" id="recommend">生成我的今日一餐 →</button>
+      <div class="status"><span><span class="status-dot"></span><span id="connection">麦当劳 MCP 实时快照已载入</span></span><span id="time">深圳同方信息港餐厅 · 2026-10-25 16:54</span></div>
+    </section>
+    <section class="result" id="result">
+      <article class="meal-card"><span class="tag" id="tag">今日处方 · 续命</span><h2 id="title">麦辣鸡腿汉堡三件套</h2><p id="desc">给正在赶路的你：足够满足，但不把下午的状态一起吃掉。来自深圳同方信息港餐厅实时菜单。</p><div class="stats"><div class="stat"><b id="kcal">485 kcal</b>MCP 营养状态（麦辣鸡腿堡）</div><div class="stat"><b id="price">¥33.5</b>实时售价 · 单点</div></div></article>
+      <aside class="breakdown"><h3>这份推荐，为什么适合你</h3><div id="items"><div class="item"><span>麦辣鸡腿汉堡</span><span>主角 · 485 kcal</span></div><div class="item"><span>中薯条</span><span>默认小食 · 289 kcal</span></div><div class="item"><span>可乐中杯</span><span>默认饮料 · 147 kcal</span></div><div class="item"><span>套餐合计</span><span>约 921 kcal</span></div></div><div class="total"><span>麦当劳原价</span><span id="saving">¥46.0</span></div><div class="action-row"><button class="ghost" id="refresh">换一个方案</button><button class="ghost" id="copy">复制点单提示</button></div></aside>
+    </section>
+    <section><div class="section-head"><h2>麦脉的三个坚持</h2><p>不是替你决定，而是让选择更像你。</p></div><div class="principles"><div class="principle"><div class="num">01 / CONTEXT</div><h3>先问状态，再看菜单</h3><p>把“我想吃什么”变成“我今天需要什么”，让推荐从情绪和场景开始。</p></div><div class="principle"><div class="num">02 / REAL-TIME</div><h3>用实时数据做决定</h3><p>接入菜单、营养、优惠与价格工具，不凭过期印象给你一份看似正确的答案。</p></div><div class="principle"><div class="num">03 / HUMAN</div><h3>把最后一步留给你</h3><p>麦脉只负责算清楚和讲明白；下单前，你永远拥有确认、修改和拒绝的权利。</p></div></div></section>
+    <footer><span>麦脉 PULSE · 创意开发大赛作品</span><span>非麦当劳官方产品 · 结果以官方渠道为准</span></footer>
+  </main>
+  <div class="toast" id="toast"></div>
+  <script>
+    const plans = {
+      续命: { title:'麦辣鸡腿汉堡三件套', desc:'给正在赶路的你：足够满足，但不把下午的状态一起吃掉。来自深圳同方信息港餐厅实时菜单。', kcal:'485 kcal', price:'¥33.5', saving:'¥46.0', items:[['麦辣鸡腿汉堡','主角 · 485 kcal'],['中薯条','默认小食 · 289 kcal'],['可乐中杯','默认饮料 · 147 kcal'],['套餐合计','约 921 kcal']] },
+      放松: { title:'板烧鸡腿堡三件套', desc:'今天不需要效率。热的、软的、熟悉的，给自己一个缓冲区。来自实时门店菜单。', kcal:'391 kcal', price:'¥34.5', saving:'¥47.0', items:[['板烧鸡腿堡','舒适主食 · 391 kcal'],['中薯条','默认小食 · 289 kcal'],['可乐中杯','默认饮料 · 147 kcal'],['套餐合计','约 827 kcal']] },
+      庆祝: { title:'不素之霸双层牛堡三件套', desc:'值得庆祝的事情，不必等到大事发生。今天的小胜利也算数。', kcal:'493 kcal', price:'¥37.5', saving:'¥50.0', items:[['不素之霸双层牛堡','快乐加倍 · 493 kcal'],['中薯条','默认小食 · 289 kcal'],['可乐中杯','默认饮料 · 147 kcal'],['套餐合计','约 929 kcal']] },
+      轻盈: { title:'麦香鱼套餐', desc:'想吃汉堡，也想让身体舒服。把饱足感留住，把多余的负担拿走。', kcal:'325 kcal', price:'¥33.5', saving:'¥46.0', items:[['麦香鱼','蛋白质 · 325 kcal'],['中薯条','默认小食 · 289 kcal'],['可乐中杯','默认饮料 · 147 kcal'],['套餐合计','约 761 kcal']] },
+      社交: { title:'BFF四宫格小食盘双人餐', desc:'把菜单变成一张桌子：每个人都能找到自己的那一口。', kcal:'—', price:'¥62.9', saving:'¥122.5', items:[['BFF四宫格小食盘','一起分享'],['可随单购麦金卡','双人餐优惠'],['门店当前无可用券','可继续领麦麦省券'],['合计','实时价格 ¥62.9']] },
+      社恐专属: { title:'麦辣鸡腿汉堡 + 苹果片', desc:'不想说话，只想拿了就走。外带、少开口、自己吃，社恐友好。', kcal:'622 kcal', price:'¥39.0', saving:'¥0', items:[['麦辣鸡腿汉堡','主角 · 485 kcal'],['苹果片','安静小食 · 32 kcal'],['雪碧中杯','默认饮料 · 105 kcal'],['合计','¥39.0 外带不社交']] },
+      深夜emo: { title:'麦旋风 + 冰美式', desc:'凌晨的情绪需要一点甜，再来一点苦。吃完继续 emo，或者睡觉。', kcal:'279 kcal', price:'¥27.4', saving:'¥0', items:[['麦旋风','甜的部分 · 266 kcal'],['麦咖啡冰美式','苦的部分 · 13 kcal'],['深夜热量','约等于一次叹气'],['合计','¥27.4 情绪补给']] },
+      减肥第一天: { title:'苹果片 + 鲜萃咖啡', desc:'第一天总是充满希望：一份苹果片，一杯黑咖啡，和一句明天再说。', kcal:'45 kcal', price:'¥16.5', saving:'¥0', items:[['苹果片','清肠 · 32 kcal'],['鲜萃咖啡','清醒 · 13 kcal'],['意志力','满格（暂时）'],['合计','¥16.5 轻到飞起']] },
+      钱包在减肥: { title:'麦乐鸡5块 + 雪碧', desc:'余额在减肥，但馋虫没有。麦乐鸡配雪碧，穷得很有性价比。', kcal:'318 kcal', price:'¥23.5', saving:'¥0', items:[['麦乐鸡5块','快乐 · 213 kcal'],['雪碧中杯','气泡 · 105 kcal'],['钱包','仍在哭泣'],['合计','¥23.5 穷鬼快乐餐']] },
+      暴风吸入: { title:'麦辣鸡腿汉堡 + 鸡翅 + 薯条', desc:'不纠结，不细嚼，三分钟解决一场饥饿暴动。', kcal:'998 kcal', price:'¥51.0', saving:'¥0', items:[['麦辣鸡腿汉堡','主力 · 485 kcal'],['麦辣鸡翅','加码 · 224 kcal'],['中薯条','压轴 · 289 kcal'],['合计','¥51.0 暴风吸入']] },
+      假装很健康: { title:'板烧鸡腿堡 + 玉米杯 + 牛奶', desc:'点了板烧和玉米杯，告诉自己这顿很养生。', kcal:'573 kcal', price:'¥47.0', saving:'¥0', items:[['板烧鸡腿堡','养生主菜 · 391 kcal'],['玉米杯','蔬菜感 · 53 kcal'],['纯牛奶','补钙 · 129 kcal'],['合计','¥47.0 心理养生']] },
+      周一崩溃: { title:'巨无霸 + 中薯条 + 雪碧', desc:'周一值得一个巨无霸。经典、扎实、不废话。', kcal:'907 kcal', price:'¥48.5', saving:'¥0', items:[['巨无霸','扛住周一 · 513 kcal'],['中薯条','续命 · 289 kcal'],['雪碧中杯','气泡复活 · 105 kcal'],['合计','¥48.5 周一特供']] }
+    };
+    let mood = '续命';
+    const $ = id => document.getElementById(id);
+    function render(){ const p=plans[mood]; $('tag').textContent=`今日处方 · ${mood}`; $('title').textContent=p.title; $('desc').textContent=p.desc; $('kcal').textContent=p.kcal; $('price').textContent=p.price; $('saving').textContent=p.saving; $('items').innerHTML=p.items.map(x=>`<div class="item"><span>${x[0]}</span><span>${x[1]}</span></div>`).join(''); }
+    document.querySelectorAll('.mood').forEach(btn=>btn.addEventListener('click',()=>{ document.querySelectorAll('.mood').forEach(x=>x.classList.remove('active')); btn.classList.add('active'); mood=btn.dataset.mood; render(); }));
+    $('recommend').addEventListener('click',()=>{ render(); toast('已结合实时菜单、营养和优惠，为你生成一餐'); });
+    $('refresh').addEventListener('click',()=>{ const keys=Object.keys(plans); mood=keys[(keys.indexOf(mood)+1)%keys.length]; document.querySelectorAll('.mood').forEach(x=>x.classList.toggle('active',x.dataset.mood===mood)); render(); toast('换了一份更适合现在的方案'); });
+    $('copy').addEventListener('click',()=>{ const p=plans[mood]; navigator.clipboard?.writeText(`麦脉推荐：${p.title}，${p.price}，营养参考 ${p.kcal}。门店：深圳同方信息港餐厅。下单前请以麦当劳官方实时结果为准。`); toast('点单提示已复制'); });
+    function toast(text){ $('toast').textContent=text; $('toast').classList.add('show'); setTimeout(()=>$('toast').classList.remove('show'),2200); }
+    render();
+  </script>
+</body>
+</html>
