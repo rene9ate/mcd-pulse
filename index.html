@@ -70,7 +70,12 @@
     .nl-reason { margin-top:14px; padding:14px 16px; border-radius:14px; background:#fff7e6; border:1px solid #ffd591; font-size:13px; line-height:1.7; color:#7a4b00; }
     .nl-reason b { color:var(--red); }
     .ai-badge { display:inline-block; background:var(--ink); color:#fff; border-radius:999px; padding:5px 10px; font-size:11px; font-family:'DM Mono',monospace; margin-bottom:12px; }
-    @media(max-width:760px){ .shell{padding:22px 16px 40px} nav{margin-bottom:48px}.hero,.result{grid-template-columns:1fr;gap:28px}.hero p{max-width:none}.principles{grid-template-columns:1fr}.section-head{display:block}.section-head p{margin-top:8px} footer{display:block;line-height:1.8} }
+    .two-col { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+    .rx-wrap { background:#fff; border:1px solid var(--line); border-radius:18px; padding:14px; display:flex; justify-content:center; }
+    .rx-wrap svg { width:100%; height:auto; border-radius:10px; }
+    .mcp-out { margin-top:16px; border:1px solid var(--line); border-radius:14px; padding:14px; background:#fff; font-size:12px; line-height:1.6; color:#444; max-height:280px; overflow:auto; white-space:pre-wrap; word-break:break-word; }
+    .mcp-out:empty { display:none; }
+    @media(max-width:760px){ .two-col{grid-template-columns:1fr} } .shell{padding:22px 16px 40px} nav{margin-bottom:48px}.hero,.result{grid-template-columns:1fr;gap:28px}.hero p{max-width:none}.principles{grid-template-columns:1fr}.section-head{display:block}.section-head p{margin-top:8px} footer{display:block;line-height:1.8} }
   </style>
 </head>
 <body>
@@ -99,6 +104,7 @@
       <aside class="breakdown"><h3>这份推荐，为什么适合你</h3><div id="items"><div class="item"><span>麦辣鸡腿汉堡</span><span>主角 · 485 kcal</span></div><div class="item"><span>中薯条</span><span>默认小食 · 289 kcal</span></div><div class="item"><span>可乐中杯</span><span>默认饮料 · 147 kcal</span></div><div class="item"><span>套餐合计</span><span>约 921 kcal</span></div></div><div class="total"><span>麦当劳原价</span><span id="saving">¥46.0</span></div><div class="action-row"><button class="ghost" id="refresh">换一个方案</button><button class="ghost" id="copy">复制点单提示</button></div></aside>
     </section>
     <section><div class="section-head"><h2>麦脉的三个坚持</h2><p>不是替你决定，而是让选择更像你。</p></div><div class="principles"><div class="principle"><div class="num">01 / CONTEXT</div><h3>先问状态，再看菜单</h3><p>把“我想吃什么”变成“我今天需要什么”，让推荐从情绪和场景开始。</p></div><div class="principle"><div class="num">02 / REAL-TIME</div><h3>用实时数据做决定</h3><p>接入菜单、营养、优惠与价格工具，不凭过期印象给你一份看似正确的答案。</p></div><div class="principle"><div class="num">03 / HUMAN</div><h3>把最后一步留给你</h3><p>麦脉只负责算清楚和讲明白；下单前，你永远拥有确认、修改和拒绝的权利。</p></div></div></section>
+    <section><div class="section-head"><h2>麦脉的两个新玩法</h2><p>把推荐变成可分享的处方，把能力接到真实 MCP。</p></div><div class="two-col"><div class="panel"><span class="ai-badge">处方笺海报</span><div class="prompt">把今天的处方，变成一张能发朋友圈的图</div><div class="rx-wrap" id="rx-wrap"></div><button class="cta" id="rx-download">下载处方笺图片 ↓</button></div><div class="panel"><span class="ai-badge">麦脉深联动 · 实时 MCP</span><div class="prompt">不止推荐，还能读活动、看券、领券</div><div class="action-row"><button class="ghost" id="mcp-campaigns">拉取当前活动</button><button class="ghost" id="mcp-coupons">可领券查询</button><button class="ghost" id="mcp-bind">一键领券</button></div><div class="mcp-out" id="mcp-out"></div></div></div></section>
     <footer><span>麦脉 PULSE · 创意开发大赛作品</span><span>非麦当劳官方产品 · 结果以官方渠道为准</span></footer>
   </main>
   <div class="toast" id="toast"></div>
@@ -119,7 +125,7 @@
     };
     let mood = '续命';
     const $ = id => document.getElementById(id);
-    function render(){ const p=plans[mood]; $('tag').textContent=`今日处方 · ${mood}`; $('title').textContent=p.title; $('desc').textContent=p.desc; $('kcal').textContent=p.kcal; $('price').textContent=p.price; $('saving').textContent=p.saving; $('items').innerHTML=p.items.map(x=>`<div class="item"><span>${x[0]}</span><span>${x[1]}</span></div>`).join(''); }
+    function render(){ const p=plans[mood]; $('tag').textContent=`今日处方 · ${mood}`; $('title').textContent=p.title; $('desc').textContent=p.desc; $('kcal').textContent=p.kcal; $('price').textContent=p.price; $('saving').textContent=p.saving; $('items').innerHTML=p.items.map(x=>`<div class="item"><span>${x[0]}</span><span>${x[1]}</span></div>`).join(''); renderRx(); }
     document.querySelectorAll('.mood').forEach(btn=>btn.addEventListener('click',()=>{ document.querySelectorAll('.mood').forEach(x=>x.classList.remove('active')); btn.classList.add('active'); mood=btn.dataset.mood; render(); }));
     $('recommend').addEventListener('click',()=>{ render(); toast('已结合实时菜单、营养和优惠，为你生成一餐'); });
     $('refresh').addEventListener('click',()=>{ const keys=Object.keys(plans); mood=keys[(keys.indexOf(mood)+1)%keys.length]; document.querySelectorAll('.mood').forEach(x=>x.classList.toggle('active',x.dataset.mood===mood)); render(); toast('换了一份更适合现在的方案'); });
@@ -139,8 +145,33 @@
         render();
         const tag = d.source === 'model' ? '大模型解析' : '本地规则解析';
         nlReason.innerHTML = `<b>${tag}：</b>${d.reason || ''} 已为你切到「${mood}」方案。`;
-      } catch(e) { nlReason.innerHTML = '解析失败，请稍后再试，或直接点上面的状态按钮。'; }
+      } catch(e) {         nlReason.innerHTML = '解析失败，请稍后再试，或直接点上面的状态按钮。'; }
     });
+    function escapeXml(s){ return String(s).replace(/[<>&'"]/g, c=>({'<':'&lt;','>':'&gt;','&':'&amp;',"'":'&apos;','"':'&quot;'}[c])); }
+    function renderRx(){
+      const p = plans[mood];
+      const items = p.items.map((it,i)=>`<text x="36" y="${214+i*30}" font-size="15" fill="#222">${i+1}. ${escapeXml(it[0])}　<tspan fill="#8a7d63">${escapeXml(it[1])}</tspan></text>`).join('');
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="380" height="430" viewBox="0 0 380 430"><rect x="0" y="0" width="380" height="430" rx="16" fill="#fffaf2" stroke="#e3d9c6"/><rect x="0" y="0" width="380" height="62" rx="16" fill="#da291c"/><rect x="0" y="40" width="380" height="22" fill="#da291c"/><text x="26" y="40" font-size="22" font-weight="800" fill="#fff" font-family="serif">麦脉处方笺</text><text x="338" y="40" font-size="20" font-weight="800" fill="#ffc72c" font-family="serif">℞</text><text x="26" y="96" font-size="14" fill="#666">患者情绪：<tspan fill="#171717" font-weight="700">${escapeXml(mood)}</tspan></text><text x="26" y="126" font-size="14" fill="#666">推荐方案：<tspan fill="#171717" font-weight="700">${escapeXml(p.title)}</tspan></text><text x="26" y="156" font-size="14" fill="#666">预计能量 <tspan fill="#171717" font-weight="700">${escapeXml(p.kcal)}</tspan>　预计到手 <tspan fill="#171717" font-weight="700">${escapeXml(p.price)}</tspan></text><text x="26" y="190" font-size="15" font-weight="800" fill="#da291c">处方：</text>${items}<text x="26" y="364" font-size="13" fill="#8a7d63">医嘱：按时就餐，适度快乐。结果以麦当劳官方实时为准。</text><text x="26" y="410" font-size="11" fill="#bbb">麦脉 PULSE · 非麦当劳官方产品</text></svg>`;
+      $('rx-wrap').innerHTML = svg;
+    }
+    $('rx-download').addEventListener('click', ()=>{
+      const svg = $('rx-wrap').querySelector('svg');
+      if(!svg) return;
+      const xml = new XMLSerializer().serializeToString(svg);
+      const url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(xml);
+      const img = new Image();
+      img.onload = ()=>{ const c=document.createElement('canvas'); c.width=380; c.height=430; const ctx=c.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,380,430); ctx.drawImage(img,0,0); c.toBlob(b=>{ const a=document.createElement('a'); a.download='麦脉处方笺.png'; a.href=URL.createObjectURL(b); a.click(); toast('处方笺已下载'); }); };
+      img.onerror = ()=> toast('生成图片失败');
+      img.src = url;
+    });
+    async function mcpCall(path, opts){
+      const out = $('mcp-out'); out.hidden=false; out.textContent='调用真实麦当劳 MCP 中…';
+      try { const r = await fetch(path, opts||{}); const d = await r.json(); out.textContent = d.error ? ('⚠️ '+d.error) : (typeof d.content==='string' ? d.content : JSON.stringify(d,null,2)); }
+      catch(e){ out.textContent='调用失败：'+e.message; }
+    }
+    $('mcp-campaigns').addEventListener('click', ()=> mcpCall('/api/mcp/campaigns'));
+    $('mcp-coupons').addEventListener('click', ()=> mcpCall('/api/mcp/coupons'));
+    $('mcp-bind').addEventListener('click', async ()=>{ if(!confirm('确认领取麦麦省当前可领优惠券？该操作会真实写入你的账户。')) return; mcpCall('/api/mcp/bind', { method:'POST' }); });
     function toast(text){ $('toast').textContent=text; $('toast').classList.add('show'); setTimeout(()=>$('toast').classList.remove('show'),2200); }
     render();
   </script>

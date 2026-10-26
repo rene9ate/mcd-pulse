@@ -1,11 +1,15 @@
-// 麦脉 Pulse · 后端：自然语言问诊 + 麦当劳 MCP 实时推荐入口
-// 零依赖 Node.js 服务。未配置 LLM 环境变量时自动回退到本地规则解析，保证可演示。
+// 麦脉 Pulse · 后端：自然语言问诊 + 麦当劳 MCP 实时联动
+// 零依赖 Node.js 服务。
+// 环境变量：
+//   LLM_API_KEY / LLM_BASE_URL / LLM_MODEL  -> 接入真实大模型（可选）
+//   MCP_TOKEN                                 -> 接入真实麦当劳 MCP（可选，用于活动/券/领券）
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
 const PORT = process.env.PORT || 4173;
 const ROOT = __dirname;
+const MCP_BASE = process.env.MCP_BASE_URL || 'https://mcp.mcd.cn';
 
 const MOODS = ['续命','放松','庆祝','轻盈','社交','社恐专属','深夜emo','减肥第一天','钱包在减肥','暴风吸入','假装很健康','周一崩溃'];
 const MIME = { '.html':'text/html; charset=utf-8', '.js':'text/javascript; charset=utf-8', '.css':'text/css; charset=utf-8', '.md':'text/markdown; charset=utf-8', '.json':'application/json; charset=utf-8' };
@@ -77,6 +81,57 @@ reason 用中文，30 字内解释你为什么这样判断。只输出 JSON，�
   return parsed;
 }
 
+// —— 轻量麦当劳 MCP 客户端（Streamable HTTP） ——
+function extractJson(text) {
+  try { return JSON.parse(text); } catch (e) {}
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  for (const line of lines) {
+    if (line.startsWith('data:')) {
+      try { return JSON.parse(line.slice(5).trim()); } catch (e) {}
+    }
+  }
+  const m = text.match(/\{[\s\S]*\}/);
+  if (m) { try { return JSON.parse(m[0]); } catch (e) {} }
+  return null;
+}
+
+let mcpHeaders = null;
+async function ensureMcpSession() {
+  if (mcpHeaders) return mcpHeaders;
+  const token = process.env.MCP_TOKEN;
+  if (!token) throw new Error('未配置 MCP_TOKEN，无法调用真实麦当劳 MCP');
+  const headers = {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json, text/event-stream',
+    Authorization: 'Bearer ' + token
+  };
+  const initRes = await fetch(MCP_BASE, {
+    method: 'POST', headers,
+    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2024-11-05', capabilities: {}, clientInfo: { name: 'maipulse', version: '1.0.0' } } })
+  });
+  const sid = initRes.headers.get('mcp-session-id');
+  if (sid) headers['mcp-session-id'] = sid;
+  extractJson(await initRes.text());
+  await fetch(MCP_BASE, { method: 'POST', headers, body: JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' }) });
+  mcpHeaders = headers;
+  return headers;
+}
+
+async function callMcp(tool, args) {
+  const headers = await ensureMcpSession();
+  const res = await fetch(MCP_BASE, {
+    method: 'POST', headers,
+    body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: tool, arguments: args || {} } })
+  });
+  const text = await res.text();
+  const json = extractJson(text);
+  let content = json;
+  if (json && json.result && Array.isArray(json.result.content)) {
+    content = json.result.content.map(c => (c.text || (c.resource && c.resource.text) || '')).join('\n');
+  }
+  return { content, raw: json };
+}
+
 const server = http.createServer((req, res) => {
   if (req.method === 'POST' && req.url === '/api/prescribe') {
     let body = '';
@@ -96,10 +151,32 @@ const server = http.createServer((req, res) => {
     });
     return;
   }
+
+  // 更深 MCP 联动（读活动 / 查券 / 一键领券）
+  const mcpRoute = (path, tool, method) =>
+    req.url === path && (method === undefined || req.method === method);
+
+  if (mcpRoute('/api/mcp/campaigns')) {
+    callMcp('campaign-calendar', {}).then(r => send(res, 200, JSON.stringify({ tool: 'campaign-calendar', ...r })))
+      .catch(e => send(res, 200, JSON.stringify({ error: String(e) })));
+    return;
+  }
+  if (mcpRoute('/api/mcp/coupons')) {
+    callMcp('available-coupons', {}).then(r => send(res, 200, JSON.stringify({ tool: 'available-coupons', ...r })))
+      .catch(e => send(res, 200, JSON.stringify({ error: String(e) })));
+    return;
+  }
+  if (mcpRoute('/api/mcp/bind', 'POST')) {
+    callMcp('auto-bind-coupons', {}).then(r => send(res, 200, JSON.stringify({ tool: 'auto-bind-coupons', ...r })))
+      .catch(e => send(res, 200, JSON.stringify({ error: String(e) })));
+    return;
+  }
+
   serveStatic(req, res);
 });
 
 server.listen(PORT, () => {
-  const hasLLM = !!(process.env.LLM_API_KEY && process.env.LLM_BASE_URL && process.env.LLM_MODEL);
-  console.log('麦脉 Pulse → http://localhost:' + PORT + (hasLLM ? '（已接入大模型）' : '（本地规则兜底，未配置 LLM_*）'));
+  const llm = !!(process.env.LLM_API_KEY && process.env.LLM_BASE_URL && process.env.LLM_MODEL);
+  const mcp = !!process.env.MCP_TOKEN;
+  console.log('麦脉 Pulse → http://localhost:' + PORT + (llm ? '（已接入大模型）' : '（本地规则兜底）') + (mcp ? '（已接入麦当劳 MCP）' : '（未配置 MCP_TOKEN）'));
 });

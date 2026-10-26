@@ -21,6 +21,8 @@
 | `query-store-coupons` | 查询当前门店可用优惠券 | 计算真实优惠 |
 | `available-coupons` | 查询可领取的麦麦省优惠券 | 发现更省方案 |
 | `calculate-price` | 计算商品金额、配送费、优惠和应付总价 | 对候选方案排序 |
+| `campaign-calendar` | 查询当前在档活动与营销日历 | 「麦脉深联动」拉取当前活动 |
+| `auto-bind-coupons` | 一键领取麦麦省可领优惠券 | 「麦脉深联动」一键领券（真实写入账户） |
 | `create-order` | 用户确认后的订单创建 | 最终执行动作，必须二次确认 |
 
 ## 3. 调用流程
@@ -44,6 +46,23 @@ AI 解释：为什么适合、热量、价格、节省金额
         ↓
 create-order（仅在明确确认后）
 ```
+
+### 「麦脉深联动」实时调用（server.js 内置轻量 MCP 客户端）
+
+```text
+用户点击「麦脉深联动」面板按钮
+        ↓
+ensureMcpSession()：初始化 Streamable HTTP 会话，捕获 mcp-session-id
+        ↓
+┌─────────────────────┬──────────────────────┬────────────────────────┐
+│ 拉取当前活动          │ 可领券查询             │ 一键领券                 │
+│ campaign-calendar    │ available-coupons     │ auto-bind-coupons        │
+└─────────────────────┴──────────────────────┴────────────────────────┘
+        ↓
+前端将 content 渲染进 #mcp-out；「一键领券」先弹 confirm 二次确认
+```
+
+调用方式：后端以 `Authorization: Bearer <MCP_TOKEN>` 直连 `https://mcp.mcd.cn`，先 `initialize` 再 `notifications/initialized` 建立会话，随后以 `tools/call` 调用上述工具；`auto-bind-coupons` 为真实账户动作，仅在用户确认后触发。
 
 ## 4. AI 推荐逻辑
 
