@@ -27,6 +27,27 @@
 5. `calculate-price`：麦辣鸡腿汉堡三件套 ¥33.5，原价 ¥46.0，取餐方式含堂食/外带。
 6. `query-meal-detail`：展开三件套默认搭配（麦辣鸡腿堡 + 中薯条 + 可乐中杯）。
 
+## 本地运行（含自然语言问诊）
+
+```bash
+cd mcd-pulse
+node server.js
+# 打开 http://localhost:4173
+```
+
+- 在首页顶部“一句话描述你现在的状态”输入框，用大白话描述，例如“刚被老板骂了，又穷又饿”，麦脉会用 AI 解析成情绪/预算/热量并切到对应方案。
+- 未配置大模型时，自动使用**本地规则解析**兜底，保证打开即可演示。
+- 接入真实大模型：设置环境变量后重启即可，无需改代码：
+
+```bash
+export LLM_API_KEY=你的密钥
+export LLM_BASE_URL=https://你的兼容OpenAI的接口地址
+export LLM_MODEL=模型名
+node server.js
+```
+
+后端 `/api/prescribe` 会返回 `{ mood, budget, calorie, reason, source }`，`source` 为 `model` 表示真实大模型、`heuristic` 表示本地规则。
+
 ## 在 WorkBuddy 中接入 MCP
 
 1. 在 [open.mcd.cn/mcp](https://open.mcd.cn/mcp) 使用手机号登录并申请 MCP Token。

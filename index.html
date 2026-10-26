@@ -64,6 +64,12 @@
     footer { margin-top:66px; padding-top:18px; border-top:1px solid var(--line); display:flex; justify-content:space-between; color:var(--muted); font-size:11px; font-family:'DM Mono',monospace; }
     .toast { position:fixed; left:50%; bottom:24px; transform:translate(-50%,20px); opacity:0; background:var(--ink); color:#fff; padding:13px 17px; border-radius:12px; font-size:13px; transition:.25s; pointer-events:none; }
     .toast.show { opacity:1; transform:translate(-50%,0); }
+    .nl-panel { margin-top:26px; }
+    .nl-panel textarea { width:100%; min-height:86px; border:1px solid var(--line); border-radius:14px; padding:14px; font:inherit; resize:vertical; color:var(--ink); }
+    .nl-panel textarea:focus { outline:none; border-color:var(--ink); }
+    .nl-reason { margin-top:14px; padding:14px 16px; border-radius:14px; background:#fff7e6; border:1px solid #ffd591; font-size:13px; line-height:1.7; color:#7a4b00; }
+    .nl-reason b { color:var(--red); }
+    .ai-badge { display:inline-block; background:var(--ink); color:#fff; border-radius:999px; padding:5px 10px; font-size:11px; font-family:'DM Mono',monospace; margin-bottom:12px; }
     @media(max-width:760px){ .shell{padding:22px 16px 40px} nav{margin-bottom:48px}.hero,.result{grid-template-columns:1fr;gap:28px}.hero p{max-width:none}.principles{grid-template-columns:1fr}.section-head{display:block}.section-head p{margin-top:8px} footer{display:block;line-height:1.8} }
   </style>
 </head>
@@ -73,6 +79,13 @@
     <section class="hero">
       <div><div class="eyebrow">McDonald's MCP × AI companion</div><h1>把一餐，<br><em>配成今天的样子。</em></h1></div>
       <p>麦脉不是“猜你喜欢”，而是一份 <strong>情绪处方</strong>：告诉我你今天的状态，我帮你把口味、热量、预算和优惠，拼成刚刚好的一单。下面展示的是我刚刚用麦当劳 MCP 拉取的实时快照。</p>
+    </section>
+    <section class="panel nl-panel">
+      <span class="ai-badge">AI · 自然语言问诊</span>
+      <div class="prompt">00 / 或者，用一句话说出现在的状态</div>
+      <textarea id="nl-input" placeholder="例如：刚被老板骂了，又穷又饿，想快点吃完继续干活"></textarea>
+      <button class="cta" id="nl-go">让麦脉读懂我 →</button>
+      <div class="nl-reason" id="nl-reason" hidden></div>
     </section>
     <section class="panel">
       <div class="prompt">01 / 今天的你，更接近哪一种？</div>
@@ -111,6 +124,23 @@
     $('recommend').addEventListener('click',()=>{ render(); toast('已结合实时菜单、营养和优惠，为你生成一餐'); });
     $('refresh').addEventListener('click',()=>{ const keys=Object.keys(plans); mood=keys[(keys.indexOf(mood)+1)%keys.length]; document.querySelectorAll('.mood').forEach(x=>x.classList.toggle('active',x.dataset.mood===mood)); render(); toast('换了一份更适合现在的方案'); });
     $('copy').addEventListener('click',()=>{ const p=plans[mood]; navigator.clipboard?.writeText(`麦脉推荐：${p.title}，${p.price}，营养参考 ${p.kcal}。门店：深圳同方信息港餐厅。下单前请以麦当劳官方实时结果为准。`); toast('点单提示已复制'); });
+    const nlInput = $('nl-input'), nlReason = $('nl-reason');
+    $('nl-go').addEventListener('click', async ()=>{
+      const text = nlInput.value.trim();
+      if(!text){ toast('先说点什么吧'); return; }
+      nlReason.hidden = false; nlReason.innerHTML = '🧠 麦脉正在解读你的状态…';
+      try {
+        const r = await fetch('/api/prescribe', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ text }) });
+        const d = await r.json();
+        mood = d.mood || '续命';
+        document.querySelectorAll('.mood').forEach(x=>x.classList.toggle('active', x.dataset.mood===mood));
+        if(d.budget) $('budget').value = String(d.budget);
+        if(d.calorie) $('calorie').value = String(d.calorie);
+        render();
+        const tag = d.source === 'model' ? '大模型解析' : '本地规则解析';
+        nlReason.innerHTML = `<b>${tag}：</b>${d.reason || ''} 已为你切到「${mood}」方案。`;
+      } catch(e) { nlReason.innerHTML = '解析失败，请稍后再试，或直接点上面的状态按钮。'; }
+    });
     function toast(text){ $('toast').textContent=text; $('toast').classList.add('show'); setTimeout(()=>$('toast').classList.remove('show'),2200); }
     render();
   </script>
